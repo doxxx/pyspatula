@@ -144,7 +144,7 @@ def output_lua(categorized_items, percent_items, output_file):
     print("local PERCENTAGE_ITEMS = {", file=output_file)
     percent_items.sort(key=lambda i: i["id"])
     for item in percent_items:
-        print("\t{%d, %d}," % (item["id"], item["percent"]), file=output_file)
+        print("    {%d, %d}," % (item["id"], item["percent"]), file=output_file)
     print("}", file=output_file)
 
 
