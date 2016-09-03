@@ -1,3 +1,4 @@
+import argparse
 import json
 import re
 import itertools
@@ -141,21 +142,30 @@ def output_lua(categorized_items, output_file):
 def output_percent_items(percent_items):
     if len(percent_items) > 0:
         for item in percent_items:
-            print(item["id"])
+            print(item["id"], file=sys.stderr)
 
 
-def main(args):
-    item_ids_file = open(args[0])
-    try:
-        item_ids = set(read_item_ids(item_ids_file))
-    finally:
-        item_ids_file.close()
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--output", help="output file, defaults to stdout")
+    parser.add_argument("FILE", nargs='+', help="one or more files containing item IDs")
+    args = parser.parse_args()
 
-    items = fetch_and_parse_items(item_ids)
+    items = []
+    for item_ids_file_name in args.FILE:
+        with open(item_ids_file_name) as item_ids_file:
+            item_ids = set(read_item_ids(item_ids_file))
+            items.extend(fetch_and_parse_items(item_ids))
+
     categorized_items, percent_items = categorize_items(items)
 
-    print("Writing", args[1], file=sys.stderr)
-    output_file = open(args[1], "wt")
+    if args.output is None:
+        print("Writing to stdout", file=sys.stderr)
+        output_file = sys.stdout
+    else:
+        print("Writing to", args.output, file=sys.stderr)
+        output_file = open(args.output, "wt")
+
     try:
         output_lua(categorized_items, output_file)
     finally:
@@ -166,4 +176,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
