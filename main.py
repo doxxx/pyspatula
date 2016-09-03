@@ -149,8 +149,10 @@ def output_percent_items(percent_items):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.description = "Uses the wowdb.com API to build LibPeriodicTable custom datasets for WoW food and drink items."
     parser.add_argument("-o", "--output", help="output file, defaults to stdout")
     parser.add_argument("FILE", nargs='+', help="one or more files containing item IDs")
+    parser.epilog = """The input files may contain multiple lines with multiple item IDs listed on each line separated by commas."""
     args = parser.parse_args()
 
     items = []
