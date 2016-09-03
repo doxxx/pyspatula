@@ -44,7 +44,7 @@ def extract_effects(item):
     for spell in item.get("Spells", []):
         text = spell["Text"]
         if not FEAST_RE.search(text) is None:
-            pass
+            continue
         restores = RESTORES_RE.search(text)
         if not restores is None:
             value = restores.group(1).replace(',', '')
@@ -125,7 +125,8 @@ def categorize_items(items):
     percent_items = []
     for item in items:
         if (item["value"] and '%' in item["value"]) or (item["value2"] and '%' in item["value2"]):
-            percent_items.append(item)
+            percent = int((item["value"] or item["value2"])[:-1])
+            percent_items.append({"id": item["id"], "percent": percent})
         for category in categories_for_item(item):
             if not category is None:
                 category_list = categorized_items.get(category, [])
@@ -134,17 +135,17 @@ def categorize_items(items):
     return categorized_items, percent_items
 
 
-def output_lua(categorized_items, output_file):
+def output_lua(categorized_items, percent_items, output_file):
     for category in categorized_items:
         items = categorized_items[category]
+        items.sort(key=lambda i: i["id"])
         items_text = ",".join(["%d:%s" % (item["id"], item_value(item, category)) for item in items])
         print("PT:AddData(\"%s\",\"%s\")" % (category, items_text), file=output_file)
-
-
-def output_percent_items(percent_items):
-    if len(percent_items) > 0:
-        for item in percent_items:
-            print(item["id"], file=sys.stderr)
+    print("local PERCENTAGE_ITEMS = {", file=output_file)
+    percent_items.sort(key=lambda i: i["id"])
+    for item in percent_items:
+        print("\t{%d, %d}," % (item["id"], item["percent"]), file=output_file)
+    print("}", file=output_file)
 
 
 def main():
@@ -171,12 +172,9 @@ def main():
         output_file = open(args.output, "wt")
 
     try:
-        output_lua(categorized_items, output_file)
+        output_lua(categorized_items, percent_items, output_file)
     finally:
         output_file.close()
-
-    print("Items using percentage values:", file=sys.stderr)
-    output_percent_items(percent_items)
 
 
 if __name__ == '__main__':
